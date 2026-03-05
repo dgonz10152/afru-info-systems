@@ -17,6 +17,11 @@ import {
   GraduationCap,
   FileText,
   Download,
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  Save,
 } from "lucide-react";
 import { DataGrid } from "@/components/ui/data-grid";
 
@@ -597,29 +602,74 @@ const FEE_STRUCTURE_COLUMNS = [
   { label: "ICT", className: "text-right" },
   { label: "Library", className: "text-right" },
   { label: "Total", className: "text-right" },
+  { label: "Actions", className: "text-center" },
 ];
 
+const INITIAL_PROGRAMS = [
+  { id: "1", name: "Bachelor of Business Administration", tuition: 3500000, functional: 500000, ict: 300000, library: 200000, total: 4500000 },
+  { id: "2", name: "Bachelor of Computer Science", tuition: 4000000, functional: 500000, ict: 300000, library: 200000, total: 5000000 },
+  { id: "3", name: "Bachelor of Education", tuition: 2800000, functional: 500000, ict: 300000, library: 200000, total: 3800000 },
+  { id: "4", name: "Bachelor of Theology", tuition: 2500000, functional: 500000, ict: 300000, library: 200000, total: 3500000 },
+];
+
+const EMPTY_PROGRAM = { id: "", name: "", tuition: 0, functional: 0, ict: 0, library: 0, total: 0 };
+
 export function FeeStructure() {
-  const programs = [
-    { id: "1", name: "Bachelor of Business Administration", tuition: 3500000, functional: 500000, ict: 300000, library: 200000, total: 4500000 },
-    { id: "2", name: "Bachelor of Computer Science", tuition: 4000000, functional: 500000, ict: 300000, library: 200000, total: 5000000 },
-    { id: "3", name: "Bachelor of Education", tuition: 2800000, functional: 500000, ict: 300000, library: 200000, total: 3800000 },
-    { id: "4", name: "Bachelor of Theology", tuition: 2500000, functional: 500000, ict: 300000, library: 200000, total: 3500000 },
-  ];
+  const [programs, setPrograms] = useState(INITIAL_PROGRAMS);
+  const [showModal, setShowModal] = useState(false);
+  const [editingProgram, setEditingProgram] = useState<typeof EMPTY_PROGRAM | null>(null);
+  const [formData, setFormData] = useState(EMPTY_PROGRAM);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const computedTotal = formData.tuition + formData.functional + formData.ict + formData.library;
+
+  const openNew = () => {
+    setFormData({ ...EMPTY_PROGRAM, id: String(Date.now()) });
+    setEditingProgram(null);
+    setShowModal(true);
+  };
+
+  const openEdit = (program: typeof EMPTY_PROGRAM) => {
+    setFormData({ ...program });
+    setEditingProgram(program);
+    setShowModal(true);
+  };
+
+  const handleSave = () => {
+    if (!formData.name) return;
+    const toSave = { ...formData, total: computedTotal };
+    if (editingProgram) {
+      setPrograms((prev) => prev.map((p) => (p.id === editingProgram.id ? toSave : p)));
+    } else {
+      setPrograms((prev) => [...prev, toSave]);
+    }
+    setShowModal(false);
+  };
+
+  const handleDelete = (id: string) => {
+    setPrograms((prev) => prev.filter((p) => p.id !== id));
+    setDeleteConfirm(null);
+  };
 
   return (
     <div className="p-6 flex flex-col h-full bg-white overflow-auto">
       <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
         <FileText className="h-6 w-6 text-blue-600" />
-        <div>
+        <div className="flex-1">
           <h2 className="text-xl font-semibold text-gray-900">Fee Structure</h2>
           <p className="text-xs text-gray-500">Academic year 2025/2026 fee breakdown by program</p>
         </div>
+        <button
+          onClick={openNew}
+          className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Add Program
+        </button>
       </div>
 
       <DataGrid
         columns={FEE_STRUCTURE_COLUMNS}
-        colTemplate="1fr 120px 120px 100px 100px 130px"
+        colTemplate="1fr 120px 120px 100px 100px 130px 80px"
         data={programs}
         getKey={(p) => p.id}
         renderRow={(p) => (
@@ -630,9 +680,114 @@ export function FeeStructure() {
             <div className="px-3 py-3 text-sm text-gray-700 text-right">{formatCurrency(p.ict)}</div>
             <div className="px-3 py-3 text-sm text-gray-700 text-right">{formatCurrency(p.library)}</div>
             <div className="px-3 py-3 text-sm font-bold text-gray-900 text-right">{formatCurrency(p.total)}</div>
+            <div className="px-3 py-3 flex items-center justify-center gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); openEdit(p); }}
+                className="p-1 hover:bg-blue-100 rounded transition-colors"
+                title="Edit"
+              >
+                <Edit2 className="h-3.5 w-3.5 text-blue-600" />
+              </button>
+              {deleteConfirm === p.id ? (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
+                    className="p-1 hover:bg-red-100 rounded transition-colors"
+                    title="Confirm delete"
+                  >
+                    <CheckCircle className="h-3.5 w-3.5 text-red-600" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDeleteConfirm(null); }}
+                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    title="Cancel"
+                  >
+                    <X className="h-3.5 w-3.5 text-gray-500" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDeleteConfirm(p.id); }}
+                  className="p-1 hover:bg-red-100 rounded transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                </button>
+              )}
+            </div>
           </>
         )}
       />
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {editingProgram ? "Edit Fee Structure" : "Add Fee Structure"}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {editingProgram ? `Editing ${editingProgram.name}` : "Add a new program fee structure"}
+                </p>
+              </div>
+              <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Program Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g. Bachelor of Computer Science"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {(["tuition", "functional", "ict", "library"] as const).map((field) => (
+                  <div key={field}>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1 capitalize">
+                      {field === "ict" ? "ICT" : field.charAt(0).toUpperCase() + field.slice(1)} (UGX)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData[field]}
+                      onChange={(e) => setFormData({ ...formData, [field]: Number(e.target.value) })}
+                      min={0}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center justify-between">
+                <span className="text-sm font-medium text-blue-700">Computed Total</span>
+                <span className="text-sm font-bold text-blue-900">{formatCurrency(computedTotal)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSave}
+                disabled={!formData.name}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Save className="h-4 w-4" /> {editingProgram ? "Save Changes" : "Add Program"}
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
