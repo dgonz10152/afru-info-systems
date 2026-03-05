@@ -3,6 +3,7 @@
 import React from "react"
 
 import { useState } from "react";
+import { DataGrid } from "@/components/ui/data-grid";
 import {
   Search,
   FileText,
@@ -163,8 +164,6 @@ export function InvoiceDashboard() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
   const categories = [...new Set(MOCK_INVOICES.map((inv) => inv.category))];
 
@@ -179,9 +178,6 @@ export function InvoiceDashboard() {
     const matchCategory = filterCategory === "all" || inv.category === filterCategory;
     return matchSearch && matchStatus && matchCategory;
   });
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const totalValue = MOCK_INVOICES.reduce((s, inv) => s + inv.amount, 0);
   const approvedValue = MOCK_INVOICES.filter((inv) => inv.status === "approved").reduce((s, inv) => s + inv.amount, 0);
@@ -352,14 +348,14 @@ export function InvoiceDashboard() {
           <input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => { setSearch(e.target.value); }}
             className="flex-1 text-sm bg-transparent placeholder-gray-400 focus:outline-none text-gray-800"
             placeholder="Search by company, invoice, serial, contact..."
           />
         </div>
         <select
           value={filterStatus}
-          onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+          onChange={(e) => { setFilterStatus(e.target.value); }}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="all">All Statuses</option>
@@ -367,7 +363,7 @@ export function InvoiceDashboard() {
         </select>
         <select
           value={filterCategory}
-          onChange={(e) => { setFilterCategory(e.target.value); setCurrentPage(1); }}
+          onChange={(e) => { setFilterCategory(e.target.value); }}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="all">All Categories</option>
@@ -375,25 +371,26 @@ export function InvoiceDashboard() {
         </select>
       </div>
 
-      {/* Grid */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[90px_1fr_130px_100px_120px_100px_60px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Invoice #</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Company / Job</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Serial No.</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Category</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Amount</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Status</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">View</div>
-        </div>
-        {paginatedData.map((inv) => {
+      <DataGrid
+        columns={[
+          { label: "Invoice #" },
+          { label: "Company / Job" },
+          { label: "Serial No." },
+          { label: "Category" },
+          { label: "Amount", className: "text-right" },
+          { label: "Status", className: "text-center" },
+          { label: "View", className: "text-center" },
+        ]}
+        colTemplate="90px 1fr 130px 100px 120px 100px 60px"
+        data={filtered}
+        getKey={(inv) => inv.id}
+        pageSize={6}
+        totalLabel="invoices"
+        onRowClick={(inv) => setSelectedInvoice(inv)}
+        renderRow={(inv) => {
           const sc = statusConfig[inv.status];
           return (
-            <div
-              key={inv.id}
-              className="grid grid-cols-[90px_1fr_130px_100px_120px_100px_60px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer"
-              onClick={() => setSelectedInvoice(inv)}
-            >
+            <>
               <div className="px-3 py-3 text-sm font-mono text-blue-700">{inv.invoiceNo}</div>
               <div className="px-3 py-3">
                 <div className="text-sm font-medium text-gray-900">{inv.companyName}</div>
@@ -412,48 +409,10 @@ export function InvoiceDashboard() {
                   View
                 </button>
               </div>
-            </div>
+            </>
           );
-        })}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} invoices
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-                  currentPage === page
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+        }}
+      />
     </div>
   );
 }

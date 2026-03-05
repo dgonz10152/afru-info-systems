@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  Users,
   DollarSign,
   Calendar,
   TrendingUp,
@@ -12,8 +11,8 @@ import {
   Clock,
   Briefcase,
 } from "lucide-react";
+import { DataGrid } from "@/components/ui/data-grid";
 
-// -- Mock Data --
 interface PayrollEntry {
   id: string;
   staffName: string;
@@ -41,12 +40,27 @@ const MOCK_PAYROLL: PayrollEntry[] = [
 
 const formatCurrency = (amount: number) => `UGX ${amount.toLocaleString()}`;
 
+const statusConfig = {
+  paid: { bg: "bg-green-100", text: "text-green-700", icon: <CheckCircle className="h-3.5 w-3.5" /> },
+  processing: { bg: "bg-yellow-100", text: "text-yellow-700", icon: <Clock className="h-3.5 w-3.5" /> },
+  pending: { bg: "bg-gray-100", text: "text-gray-600", icon: <Clock className="h-3.5 w-3.5" /> },
+};
+
+const PAYROLL_COLUMNS = [
+  { label: "Staff" },
+  { label: "ID" },
+  { label: "Department" },
+  { label: "Base Salary", className: "text-right" },
+  { label: "Allowances", className: "text-right" },
+  { label: "Deductions", className: "text-right" },
+  { label: "Net Pay", className: "text-right" },
+  { label: "Status", className: "text-center" },
+];
+
 export function PayrollDashboard() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "paid" | "processing" | "pending">("all");
   const [selectedMonth, setSelectedMonth] = useState("2026-01");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
 
   const filtered = MOCK_PAYROLL.filter((p) => {
     const matchSearch =
@@ -56,9 +70,6 @@ export function PayrollDashboard() {
     const matchStatus = filterStatus === "all" || p.status === filterStatus;
     return matchSearch && matchStatus;
   });
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const totalBase = MOCK_PAYROLL.reduce((s, p) => s + p.baseSalary, 0);
   const totalAllowances = MOCK_PAYROLL.reduce((s, p) => s + p.allowances, 0);
@@ -78,12 +89,6 @@ export function PayrollDashboard() {
   ];
 
   const maxTrend = Math.max(...monthlyTrend.map((m) => m.total));
-
-  const statusConfig = {
-    paid: { bg: "bg-green-100", text: "text-green-700", icon: <CheckCircle className="h-3.5 w-3.5" /> },
-    processing: { bg: "bg-yellow-100", text: "text-yellow-700", icon: <Clock className="h-3.5 w-3.5" /> },
-    pending: { bg: "bg-gray-100", text: "text-gray-600", icon: <Clock className="h-3.5 w-3.5" /> },
-  };
 
   return (
     <div className="p-6 flex flex-col h-full bg-white overflow-auto">
@@ -106,7 +111,6 @@ export function PayrollDashboard() {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -138,7 +142,6 @@ export function PayrollDashboard() {
         </div>
       </div>
 
-      {/* Status Summary + Monthly Trend */}
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div className="border border-gray-200 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-800 mb-4">Payment Status</h3>
@@ -174,7 +177,6 @@ export function PayrollDashboard() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -203,22 +205,17 @@ export function PayrollDashboard() {
         </button>
       </div>
 
-      {/* Payroll Table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[1fr_80px_120px_110px_110px_110px_110px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Staff</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">ID</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Department</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Base Salary</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Allowances</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Deductions</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Net Pay</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Status</div>
-        </div>
-        {paginatedData.map((p) => {
+      <DataGrid
+        columns={PAYROLL_COLUMNS}
+        colTemplate="1fr 80px 120px 110px 110px 110px 110px 80px"
+        data={filtered}
+        getKey={(p) => p.id}
+        pageSize={5}
+        totalLabel="entries"
+        renderRow={(p) => {
           const sc = statusConfig[p.status];
           return (
-            <div key={p.id} className="grid grid-cols-[1fr_80px_120px_110px_110px_110px_110px_80px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors">
+            <>
               <div className="px-3 py-3">
                 <div className="text-sm font-medium text-gray-900">{p.staffName}</div>
                 <div className="text-xs text-gray-500">{p.role}</div>
@@ -234,48 +231,10 @@ export function PayrollDashboard() {
                   {sc.icon}
                 </span>
               </div>
-            </div>
+            </>
           );
-        })}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} entries
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-                  currentPage === page
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+        }}
+      />
     </div>
   );
 }

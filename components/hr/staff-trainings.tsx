@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, CheckCircle, Clock, Eye, X, ExternalLink } from "lucide-react";
+import { BookOpen, Eye, X, ExternalLink } from "lucide-react";
+import { DataGrid } from "@/components/ui/data-grid";
 
 interface TrainingItem {
   id: string;
@@ -83,6 +84,16 @@ const statusColors = {
   rejected: "bg-red-100 text-red-700",
 };
 
+const TRAINING_COLUMNS = [
+  { label: "ID" },
+  { label: "Training" },
+  { label: "Provider" },
+  { label: "Type" },
+  { label: "Dates" },
+  { label: "Status" },
+  { label: "View" },
+];
+
 export function TrainingDashboard() {
   const [viewTraining, setViewTraining] = useState<TrainingItem | null>(null);
 
@@ -111,18 +122,14 @@ export function TrainingDashboard() {
         </div>
       </div>
 
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[60px_1fr_1fr_100px_100px_100px_60px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">ID</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Training</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Provider</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Type</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Dates</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Status</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">View</div>
-        </div>
-        {MOCK_TRAININGS.map((t) => (
-          <div key={t.id} className="grid grid-cols-[60px_1fr_1fr_100px_100px_100px_60px] border-b border-gray-100 hover:bg-blue-50 transition-colors">
+      <DataGrid
+        columns={TRAINING_COLUMNS}
+        colTemplate="60px 1fr 1fr 100px 100px 100px 60px"
+        data={MOCK_TRAININGS}
+        getKey={(t) => t.id}
+        totalLabel="trainings"
+        renderRow={(t) => (
+          <>
             <div className="px-3 py-2.5 text-sm text-gray-600">{t.id}</div>
             <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{t.title}</div>
             <div className="px-3 py-2.5 text-sm text-gray-600">{t.provider}</div>
@@ -138,13 +145,13 @@ export function TrainingDashboard() {
               </span>
             </div>
             <div className="px-3 py-2.5">
-              <button onClick={() => setViewTraining(t)} className="p-1 hover:bg-gray-200 rounded transition-colors">
+              <button onClick={(e) => { e.stopPropagation(); setViewTraining(t); }} className="p-1 hover:bg-gray-200 rounded transition-colors">
                 <Eye className="h-4 w-4 text-blue-600" />
               </button>
             </div>
-          </div>
-        ))}
-      </div>
+          </>
+        )}
+      />
 
       {viewTraining && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">

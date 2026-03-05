@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus, Eye, FileText, Upload, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Search, Plus, Eye, FileText, X } from "lucide-react";
+import { DataGrid } from "@/components/ui/data-grid";
 
 interface Candidate {
   id: string;
@@ -72,6 +73,15 @@ const statusColors = {
   rejected: "bg-red-100 text-red-700",
 };
 
+const CANDIDATES_COLUMNS = [
+  { label: "ID" },
+  { label: "Name" },
+  { label: "Position" },
+  { label: "Date" },
+  { label: "Status" },
+  { label: "Actions" },
+];
+
 interface CandidatesListProps {
   onSelectCandidate: (candidate: Candidate) => void;
   selectedId: string | null;
@@ -119,43 +129,36 @@ function CandidatesList({ onSelectCandidate, selectedId }: CandidatesListProps) 
         </button>
       </div>
 
-      <div className="border border-gray-200 rounded-lg overflow-hidden flex-1">
-        <div className="grid grid-cols-[60px_1fr_1fr_120px_120px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">ID</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Name</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Position</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Date</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Status</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Actions</div>
-        </div>
-        {filtered.map((candidate) => (
-          <div
-            key={candidate.id}
-            className={`grid grid-cols-[60px_1fr_1fr_120px_120px_80px] border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors ${
-              selectedId === candidate.id ? "bg-blue-50" : ""
-            }`}
-            onClick={() => onSelectCandidate(candidate)}
-          >
-            <div className="px-3 py-2.5 text-sm text-gray-600">{candidate.id}</div>
-            <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{candidate.name}</div>
-            <div className="px-3 py-2.5 text-sm text-gray-600">{candidate.position}</div>
-            <div className="px-3 py-2.5 text-sm text-gray-600">{candidate.applicationDate}</div>
+      <DataGrid
+        columns={CANDIDATES_COLUMNS}
+        colTemplate="60px 1fr 1fr 120px 120px 80px"
+        data={filtered}
+        getKey={(c) => c.id}
+        totalLabel="candidates"
+        onRowClick={onSelectCandidate}
+        getRowClass={(c) => selectedId === c.id ? "bg-blue-50" : ""}
+        renderRow={(c) => (
+          <>
+            <div className="px-3 py-2.5 text-sm text-gray-600">{c.id}</div>
+            <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{c.name}</div>
+            <div className="px-3 py-2.5 text-sm text-gray-600">{c.position}</div>
+            <div className="px-3 py-2.5 text-sm text-gray-600">{c.applicationDate}</div>
             <div className="px-3 py-2.5">
-              <span className={`px-2 py-1 text-xs rounded font-medium ${statusColors[candidate.status]}`}>
-                {candidate.status.charAt(0).toUpperCase() + candidate.status.slice(1)}
+              <span className={`px-2 py-1 text-xs rounded font-medium ${statusColors[c.status]}`}>
+                {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
               </span>
             </div>
             <div className="px-3 py-2.5">
               <button
                 className="p-1 hover:bg-gray-200 rounded transition-colors"
-                onClick={(e) => { e.stopPropagation(); onSelectCandidate(candidate); }}
+                onClick={(e) => { e.stopPropagation(); onSelectCandidate(c); }}
               >
                 <Eye className="h-4 w-4 text-gray-500" />
               </button>
             </div>
-          </div>
-        ))}
-      </div>
+          </>
+        )}
+      />
     </div>
   );
 }
@@ -257,7 +260,23 @@ export function InterviewCandidates() {
   );
 }
 
+const SCORES_SUMMARY_COLUMNS = [
+  { label: "ID" },
+  { label: "Candidate" },
+  { label: "Position" },
+  { label: "Total" },
+  { label: "Percentage" },
+  { label: "Verdict" },
+];
+
 export function InterviewScores() {
+  const scoredCandidates = MOCK_CANDIDATES.map((c) => {
+    const total = c.scores.reduce((s, sc) => s + sc.score, 0);
+    const max = c.scores.reduce((s, sc) => s + sc.maxScore, 0);
+    const pct = Math.round((total / max) * 100);
+    return { ...c, total, max, pct };
+  });
+
   return (
     <div className="p-6 flex flex-col h-full bg-white">
       <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
@@ -270,39 +289,39 @@ export function InterviewScores() {
 
       <div className="bg-slate-50 rounded-lg p-4 border border-gray-200 flex-1">
         <h3 className="text-sm font-semibold text-gray-700 mb-4">Scoring Summary</h3>
-        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-          <div className="grid grid-cols-[60px_1fr_1fr_100px_100px_100px] bg-slate-100 border-b border-gray-200">
-            <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">ID</div>
-            <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Candidate</div>
-            <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Position</div>
-            <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Total</div>
-            <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Percentage</div>
-            <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Verdict</div>
-          </div>
-          {MOCK_CANDIDATES.map((c) => {
-            const total = c.scores.reduce((s, sc) => s + sc.score, 0);
-            const max = c.scores.reduce((s, sc) => s + sc.maxScore, 0);
-            const pct = Math.round((total / max) * 100);
-            return (
-              <div key={c.id} className="grid grid-cols-[60px_1fr_1fr_100px_100px_100px] border-b border-gray-100 hover:bg-blue-50 transition-colors">
-                <div className="px-3 py-2.5 text-sm text-gray-600">{c.id}</div>
-                <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{c.name}</div>
-                <div className="px-3 py-2.5 text-sm text-gray-600">{c.position}</div>
-                <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{total}/{max}</div>
-                <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{pct}%</div>
-                <div className="px-3 py-2.5">
-                  <span className={`px-2 py-1 text-xs rounded font-medium ${pct >= 70 ? "bg-green-100 text-green-700" : pct >= 50 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
-                    {pct >= 70 ? "Pass" : pct >= 50 ? "Borderline" : "Fail"}
-                  </span>
-                </div>
+        <DataGrid
+          columns={SCORES_SUMMARY_COLUMNS}
+          colTemplate="60px 1fr 1fr 100px 100px 100px"
+          data={scoredCandidates}
+          getKey={(c) => c.id}
+          totalLabel="candidates"
+          renderRow={(c) => (
+            <>
+              <div className="px-3 py-2.5 text-sm text-gray-600">{c.id}</div>
+              <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{c.name}</div>
+              <div className="px-3 py-2.5 text-sm text-gray-600">{c.position}</div>
+              <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{c.total}/{c.max}</div>
+              <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{c.pct}%</div>
+              <div className="px-3 py-2.5">
+                <span className={`px-2 py-1 text-xs rounded font-medium ${c.pct >= 70 ? "bg-green-100 text-green-700" : c.pct >= 50 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
+                  {c.pct >= 70 ? "Pass" : c.pct >= 50 ? "Borderline" : "Fail"}
+                </span>
               </div>
-            );
-          })}
-        </div>
+            </>
+          )}
+        />
       </div>
     </div>
   );
 }
+
+const STATUS_COLUMNS = [
+  { label: "ID" },
+  { label: "Candidate" },
+  { label: "Position" },
+  { label: "Date Applied" },
+  { label: "Status" },
+];
 
 export function InterviewStatus() {
   return (
@@ -330,16 +349,14 @@ export function InterviewStatus() {
         </div>
       </div>
 
-      <div className="border border-gray-200 rounded-lg overflow-hidden flex-1 bg-white">
-        <div className="grid grid-cols-[60px_1fr_1fr_120px_120px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">ID</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Candidate</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Position</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Date Applied</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Status</div>
-        </div>
-        {MOCK_CANDIDATES.map((c) => (
-          <div key={c.id} className="grid grid-cols-[60px_1fr_1fr_120px_120px] border-b border-gray-100 hover:bg-blue-50 transition-colors">
+      <DataGrid
+        columns={STATUS_COLUMNS}
+        colTemplate="60px 1fr 1fr 120px 120px"
+        data={MOCK_CANDIDATES}
+        getKey={(c) => c.id}
+        totalLabel="candidates"
+        renderRow={(c) => (
+          <>
             <div className="px-3 py-2.5 text-sm text-gray-600">{c.id}</div>
             <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{c.name}</div>
             <div className="px-3 py-2.5 text-sm text-gray-600">{c.position}</div>
@@ -349,9 +366,9 @@ export function InterviewStatus() {
                 {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
               </span>
             </div>
-          </div>
-        ))}
-      </div>
+          </>
+        )}
+      />
     </div>
   );
 }

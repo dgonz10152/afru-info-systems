@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Plus, Download, Eye, CheckCircle, Loader2 } from "lucide-react";
+import { FileText, Plus, CheckCircle, Loader2 } from "lucide-react";
+import { DataGrid } from "@/components/ui/data-grid";
 
 interface ContractTemplate {
   id: string;
@@ -47,6 +48,15 @@ interface GeneratedContract {
 const GENERATED_CONTRACTS: GeneratedContract[] = [
   { id: "GC001", employeeName: "David Ochieng", role: "Administrative Assistant", generatedDate: "2026-01-20", status: "signed" },
   { id: "GC002", employeeName: "Faith Nakibuuka", role: "Lecturer", generatedDate: "2026-01-25", status: "draft" },
+];
+
+const CONTRACT_COLUMNS = [
+  { label: "ID" },
+  { label: "Employee" },
+  { label: "Role" },
+  { label: "Generated" },
+  { label: "Status" },
+  { label: "Action" },
 ];
 
 export function OnboardingContracts() {
@@ -146,17 +156,14 @@ export function OnboardingContracts() {
       )}
 
       <h3 className="text-sm font-semibold text-gray-700 mb-3">Recently Generated Contracts</h3>
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[60px_1fr_1fr_120px_100px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">ID</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Employee</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Role</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Generated</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Status</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Action</div>
-        </div>
-        {GENERATED_CONTRACTS.map((gc) => (
-          <div key={gc.id} className="grid grid-cols-[60px_1fr_1fr_120px_100px_80px] border-b border-gray-100 hover:bg-blue-50 transition-colors">
+      <DataGrid
+        columns={CONTRACT_COLUMNS}
+        colTemplate="60px 1fr 1fr 120px 100px 80px"
+        data={GENERATED_CONTRACTS}
+        getKey={(gc) => gc.id}
+        totalLabel="contracts"
+        renderRow={(gc) => (
+          <>
             <div className="px-3 py-2.5 text-sm text-gray-600">{gc.id}</div>
             <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{gc.employeeName}</div>
             <div className="px-3 py-2.5 text-sm text-gray-600">{gc.role}</div>
@@ -167,14 +174,10 @@ export function OnboardingContracts() {
                 {gc.status.charAt(0).toUpperCase() + gc.status.slice(1)}
               </span>
             </div>
-            <div className="px-3 py-2.5">
-              <button className="p-1 hover:bg-gray-200 rounded transition-colors" title="Download">
-                <Download className="h-4 w-4 text-blue-600" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+            <div className="px-3 py-2.5 text-sm text-blue-600 hover:underline cursor-pointer">Download</div>
+          </>
+        )}
+      />
     </div>
   );
 }

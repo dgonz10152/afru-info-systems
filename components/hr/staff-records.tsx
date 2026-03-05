@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react"
-
+import React from "react";
 import { useState } from "react";
-import { Search, Users, ArrowLeft, FileText, Download, Upload, Plus, Clock, Building2, Heart, BookOpen, User, Briefcase, ClipboardCheck, Eye, CheckCircle, AlertTriangle, X } from "lucide-react";
+import { Search, Users, ArrowLeft, FileText, Download, Upload, Plus, Clock, Building2, Heart, BookOpen, User, Briefcase, ClipboardCheck, CheckCircle } from "lucide-react";
+import { DataGrid } from "@/components/ui/data-grid";
 
 interface Training {
   id: string;
@@ -167,6 +167,45 @@ const MOCK_STAFF: StaffMember[] = [
 
 type StaffTab = "biodata" | "nextOfKin" | "school" | "contracts" | "exitEntry" | "trainings" | "medical" | "documents" | "professorReports" | "appraisal";
 
+const CONTRACTS_COLUMNS = [
+  { label: "ID" },
+  { label: "Type" },
+  { label: "Start Date" },
+  { label: "End Date" },
+  { label: "Status" },
+];
+
+const EXIT_ENTRY_COLUMNS = [
+  { label: "Date" },
+  { label: "Check In" },
+  { label: "Check Out" },
+  { label: "Total Hours" },
+];
+
+const MEDICAL_COLUMNS = [
+  { label: "Date" },
+  { label: "Invoice No" },
+  { label: "Provider" },
+  { label: "Amount" },
+  { label: "Description" },
+];
+
+const DOCUMENTS_COLUMNS = [
+  { label: "Document Name" },
+  { label: "Type" },
+  { label: "Uploaded" },
+  { label: "Size" },
+  { label: "Action" },
+];
+
+const APPRAISAL_SCORES_COLUMNS = [
+  { label: "Criteria" },
+  { label: "Self Score", className: "text-center" },
+  { label: "Supervisor", className: "text-center" },
+  { label: "Diff", className: "text-center" },
+  { label: "Status" },
+];
+
 function StaffDetail({ staff, onBack }: { staff: StaffMember; onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<StaffTab>("biodata");
 
@@ -184,6 +223,18 @@ function StaffDetail({ staff, onBack }: { staff: StaffMember; onBack: () => void
       ? [{ key: "professorReports" as StaffTab, label: "Professor Reports", icon: <BookOpen className="h-3.5 w-3.5" /> }]
       : []),
   ];
+
+  const appraisalCriteria = staff.role.includes("Lecturer") || staff.role.includes("Professor")
+    ? ["Course Prep", "Engagement", "Assessment", "Research", "Community", "Dev"]
+    : ["Job Knowledge", "Work Quality", "Communication", "Teamwork", "Attendance", "Initiative"];
+
+  const appraisalRows = appraisalCriteria.map((c, i) => {
+    const selfScore = [8, 7, 9, 7, 6, 8][i];
+    const supScore = [8, 8, 8, 7, 7, 8][i];
+    return { id: `${i}`, criteria: c, selfScore, supScore, diff: selfScore - supScore };
+  });
+
+  const exitRows = staff.exitEntry.map((e, i) => ({ ...e, id: `exit-${i}` }));
 
   return (
     <div>
@@ -251,45 +302,40 @@ function StaffDetail({ staff, onBack }: { staff: StaffMember; onBack: () => void
         )}
 
         {activeTab === "contracts" && (
-          <div>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <div className="grid grid-cols-[80px_1fr_120px_120px_100px] bg-slate-100 border-b border-gray-200">
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">ID</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Type</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Start Date</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">End Date</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Status</div>
-              </div>
-              {staff.contracts.map((c) => (
-                <div key={c.id} className="grid grid-cols-[80px_1fr_120px_120px_100px] border-b border-gray-100 hover:bg-blue-50 transition-colors">
-                  <div className="px-3 py-2.5 text-sm text-gray-600">{c.id}</div>
-                  <div className="px-3 py-2.5 text-sm text-gray-800">{c.type}</div>
-                  <div className="px-3 py-2.5 text-sm text-gray-600">{c.startDate}</div>
-                  <div className="px-3 py-2.5 text-sm text-gray-600">{c.endDate}</div>
-                  <div className="px-3 py-2.5"><span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">{c.status}</span></div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <DataGrid
+            columns={CONTRACTS_COLUMNS}
+            colTemplate="80px 1fr 120px 120px 100px"
+            data={staff.contracts}
+            getKey={(c) => c.id}
+            totalLabel="contracts"
+            renderRow={(c) => (
+              <>
+                <div className="px-3 py-2.5 text-sm text-gray-600">{c.id}</div>
+                <div className="px-3 py-2.5 text-sm text-gray-800">{c.type}</div>
+                <div className="px-3 py-2.5 text-sm text-gray-600">{c.startDate}</div>
+                <div className="px-3 py-2.5 text-sm text-gray-600">{c.endDate}</div>
+                <div className="px-3 py-2.5"><span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">{c.status}</span></div>
+              </>
+            )}
+          />
         )}
 
         {activeTab === "exitEntry" && (
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-4 bg-slate-100 border-b border-gray-200">
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Date</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Check In</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Check Out</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Total Hours</div>
-            </div>
-            {staff.exitEntry.map((e, i) => (
-              <div key={i} className="grid grid-cols-4 border-b border-gray-100 hover:bg-blue-50 transition-colors">
+          <DataGrid
+            columns={EXIT_ENTRY_COLUMNS}
+            colTemplate="1fr 1fr 1fr 1fr"
+            data={exitRows}
+            getKey={(e) => e.id}
+            totalLabel="entries"
+            renderRow={(e) => (
+              <>
                 <div className="px-3 py-2.5 text-sm text-gray-600">{e.date}</div>
                 <div className="px-3 py-2.5 text-sm text-green-600 font-medium">{e.checkIn}</div>
                 <div className="px-3 py-2.5 text-sm text-red-600 font-medium">{e.checkOut}</div>
                 <div className="px-3 py-2.5 text-sm text-gray-800">{e.hours}</div>
-              </div>
-            ))}
-          </div>
+              </>
+            )}
+          />
         )}
 
         {activeTab === "trainings" && (
@@ -324,30 +370,26 @@ function StaffDetail({ staff, onBack }: { staff: StaffMember; onBack: () => void
         )}
 
         {activeTab === "medical" && (
-          <div>
-            {staff.medicalRecords.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No medical records found.</p>
-            ) : (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="grid grid-cols-[100px_120px_1fr_120px_1fr] bg-slate-100 border-b border-gray-200">
-                  <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Date</div>
-                  <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Invoice No</div>
-                  <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Provider</div>
-                  <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Amount</div>
-                  <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Description</div>
-                </div>
-                {staff.medicalRecords.map((m) => (
-                  <div key={m.id} className="grid grid-cols-[100px_120px_1fr_120px_1fr] border-b border-gray-100 hover:bg-blue-50 transition-colors">
-                    <div className="px-3 py-2.5 text-sm text-gray-600">{m.date}</div>
-                    <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{m.invoiceNo}</div>
-                    <div className="px-3 py-2.5 text-sm text-gray-600">{m.provider}</div>
-                    <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{m.amount}</div>
-                    <div className="px-3 py-2.5 text-sm text-gray-600">{m.description}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          staff.medicalRecords.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">No medical records found.</p>
+          ) : (
+            <DataGrid
+              columns={MEDICAL_COLUMNS}
+              colTemplate="100px 120px 1fr 120px 1fr"
+              data={staff.medicalRecords}
+              getKey={(m) => m.id}
+              totalLabel="records"
+              renderRow={(m) => (
+                <>
+                  <div className="px-3 py-2.5 text-sm text-gray-600">{m.date}</div>
+                  <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{m.invoiceNo}</div>
+                  <div className="px-3 py-2.5 text-sm text-gray-600">{m.provider}</div>
+                  <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{m.amount}</div>
+                  <div className="px-3 py-2.5 text-sm text-gray-600">{m.description}</div>
+                </>
+              )}
+            />
+          )
         )}
 
         {activeTab === "documents" && (
@@ -357,16 +399,14 @@ function StaffDetail({ staff, onBack }: { staff: StaffMember; onBack: () => void
                 <Upload className="h-4 w-4" /> Upload Document
               </button>
             </div>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <div className="grid grid-cols-[1fr_120px_120px_80px_80px] bg-slate-100 border-b border-gray-200">
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Document Name</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Type</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Uploaded</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Size</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Action</div>
-              </div>
-              {staff.documents.map((d) => (
-                <div key={d.id} className="grid grid-cols-[1fr_120px_120px_80px_80px] border-b border-gray-100 hover:bg-blue-50 transition-colors">
+            <DataGrid
+              columns={DOCUMENTS_COLUMNS}
+              colTemplate="1fr 120px 120px 80px 80px"
+              data={staff.documents}
+              getKey={(d) => d.id}
+              totalLabel="documents"
+              renderRow={(d) => (
+                <>
                   <div className="px-3 py-2.5 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-red-500" />
                     <span className="text-sm text-gray-800">{d.name}</span>
@@ -379,9 +419,9 @@ function StaffDetail({ staff, onBack }: { staff: StaffMember; onBack: () => void
                       <Download className="h-4 w-4 text-blue-600" />
                     </button>
                   </div>
-                </div>
-              ))}
-            </div>
+                </>
+              )}
+            />
           </div>
         )}
 
@@ -418,38 +458,29 @@ function StaffDetail({ staff, onBack }: { staff: StaffMember; onBack: () => void
               <h4 className="text-sm font-semibold text-gray-800">Performance Appraisal Records</h4>
               <div className="text-xs text-gray-500">Period: Semester 1 - 2025/2026</div>
             </div>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <div className="grid grid-cols-[80px_100px_100px_100px_120px] bg-slate-100 border-b border-gray-200">
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Criteria</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 text-center">Self Score</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 text-center">Supervisor</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 text-center">Diff</div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Status</div>
-              </div>
-              {(staff.role.includes("Lecturer") || staff.role.includes("Professor") ? ["Course Prep", "Engagement", "Assessment", "Research", "Community", "Dev"] : ["Job Knowledge", "Work Quality", "Communication", "Teamwork", "Attendance", "Initiative"]).map((c, i) => {
-                const scores = [8, 7, 9, 7, 6, 8];
-                const selfScore = scores[i];
-                const supScore = [8, 8, 8, 7, 7, 8][i];
-                const diff = selfScore - supScore;
-                return (
-                  <div key={c} className="grid grid-cols-[80px_100px_100px_100px_120px] border-b border-gray-100 hover:bg-blue-50 transition-colors">
-                    <div className="px-3 py-2.5 text-sm text-gray-700">{c}</div>
-                    <div className="px-3 py-2.5 text-sm text-gray-800 text-center font-medium">{selfScore}/10</div>
-                    <div className="px-3 py-2.5 text-sm text-gray-800 text-center font-medium">{supScore}/10</div>
-                    <div className="px-3 py-2.5 text-sm text-center font-medium">
-                      <span className={Math.abs(diff) > 2 ? "text-red-600" : diff !== 0 ? "text-amber-600" : "text-green-600"}>
-                        {diff > 0 ? `+${diff}` : diff}
-                      </span>
-                    </div>
-                    <div className="px-3 py-2.5">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded font-medium bg-green-100 text-green-700">
-                        <CheckCircle className="h-3 w-3" /> Submitted
-                      </span>
-                    </div>
+            <DataGrid
+              columns={APPRAISAL_SCORES_COLUMNS}
+              colTemplate="1fr 100px 100px 80px 120px"
+              data={appraisalRows}
+              getKey={(r) => r.id}
+              renderRow={(r) => (
+                <>
+                  <div className="px-3 py-2.5 text-sm text-gray-700">{r.criteria}</div>
+                  <div className="px-3 py-2.5 text-sm text-gray-800 text-center font-medium">{r.selfScore}/10</div>
+                  <div className="px-3 py-2.5 text-sm text-gray-800 text-center font-medium">{r.supScore}/10</div>
+                  <div className="px-3 py-2.5 text-sm text-center font-medium">
+                    <span className={Math.abs(r.diff) > 2 ? "text-red-600" : r.diff !== 0 ? "text-amber-600" : "text-green-600"}>
+                      {r.diff > 0 ? `+${r.diff}` : r.diff}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+                  <div className="px-3 py-2.5">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded font-medium bg-green-100 text-green-700">
+                      <CheckCircle className="h-3 w-3" /> Submitted
+                    </span>
+                  </div>
+                </>
+              )}
+            />
             <div className="mt-4 grid grid-cols-2 gap-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
                 <div className="text-xs text-blue-600 mb-1">Self-Assessment Average</div>
@@ -466,6 +497,14 @@ function StaffDetail({ staff, onBack }: { staff: StaffMember; onBack: () => void
     </div>
   );
 }
+
+const STAFF_LIST_COLUMNS = [
+  { label: "ID" },
+  { label: "Name" },
+  { label: "Role" },
+  { label: "School" },
+  { label: "Status" },
+];
 
 export function StaffDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -498,28 +537,23 @@ export function StaffDashboard() {
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          <div className="border border-gray-200 rounded-lg overflow-hidden flex-1">
-            <div className="grid grid-cols-[80px_1fr_1fr_1fr_80px] bg-slate-100 border-b border-gray-200">
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">ID</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Name</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Role</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">School</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Status</div>
-            </div>
-            {filtered.map((staff) => (
-              <div
-                key={staff.id}
-                className="grid grid-cols-[80px_1fr_1fr_1fr_80px] border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
-                onClick={() => setSelectedStaff(staff)}
-              >
-                <div className="px-3 py-2.5 text-sm text-gray-600">{staff.id}</div>
-                <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{staff.name}</div>
-                <div className="px-3 py-2.5 text-sm text-gray-600">{staff.role}</div>
-                <div className="px-3 py-2.5 text-sm text-gray-600">{staff.school}</div>
-                <div className="px-3 py-2.5"><span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">{staff.status}</span></div>
-              </div>
-            ))}
-          </div>
+          <DataGrid
+            columns={STAFF_LIST_COLUMNS}
+            colTemplate="80px 1fr 1fr 1fr 80px"
+            data={filtered}
+            getKey={(s) => s.id}
+            totalLabel="staff"
+            onRowClick={(s) => setSelectedStaff(s)}
+            renderRow={(s) => (
+              <>
+                <div className="px-3 py-2.5 text-sm text-gray-600">{s.id}</div>
+                <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{s.name}</div>
+                <div className="px-3 py-2.5 text-sm text-gray-600">{s.role}</div>
+                <div className="px-3 py-2.5 text-sm text-gray-600">{s.school}</div>
+                <div className="px-3 py-2.5"><span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">{s.status}</span></div>
+              </>
+            )}
+          />
         </>
       ) : (
         <StaffDetail staff={selectedStaff} onBack={() => setSelectedStaff(null)} />

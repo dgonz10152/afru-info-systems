@@ -190,6 +190,11 @@ function LeaveDetailModal({ leave, onClose }: { leave: LeaveApplication; onClose
 
 export function LeaveApplications() {
   const [viewLeave, setViewLeave] = useState<LeaveApplication | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const totalPages = Math.ceil(MOCK_LEAVE.length / itemsPerPage);
+  const paginatedLeave = MOCK_LEAVE.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="p-6 flex flex-col h-full bg-white overflow-auto">
@@ -217,7 +222,7 @@ export function LeaveApplications() {
       </div>
 
       <div className="space-y-3">
-        {MOCK_LEAVE.map((leave) => (
+        {paginatedLeave.map((leave) => (
           <div key={leave.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
@@ -246,6 +251,44 @@ export function LeaveApplications() {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+          <div className="text-sm text-gray-600">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, MOCK_LEAVE.length)} of {MOCK_LEAVE.length} applications
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
+                  currentPage === page
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {viewLeave && <LeaveDetailModal leave={viewLeave} onClose={() => setViewLeave(null)} />}
     </div>

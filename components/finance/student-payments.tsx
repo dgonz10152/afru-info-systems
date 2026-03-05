@@ -1,11 +1,9 @@
 "use client";
 
-import React from "react"
-
+import React from "react";
 import { useState } from "react";
 import {
   Search,
-  Users,
   ArrowLeft,
   AlertTriangle,
   CheckCircle,
@@ -20,8 +18,8 @@ import {
   FileText,
   Download,
 } from "lucide-react";
+import { DataGrid } from "@/components/ui/data-grid";
 
-// -- Mock Data --
 interface StudentPayment {
   id: string;
   name: string;
@@ -142,16 +140,23 @@ const MOCK_STUDENTS: StudentPayment[] = [
   },
 ];
 
-const formatCurrency = (amount: number) =>
-  `UGX ${amount.toLocaleString()}`;
+const formatCurrency = (amount: number) => `UGX ${amount.toLocaleString()}`;
 
-// -- Payment Status Page --
+const PAYMENT_STATUS_COLUMNS = [
+  { label: "Student" },
+  { label: "Student ID" },
+  { label: "Total Fees", className: "text-right" },
+  { label: "Balance", className: "text-right" },
+  { label: "% Paid", className: "text-center" },
+  { label: "Moodle", className: "text-center" },
+  { label: "Exams", className: "text-center" },
+  { label: "Action", className: "text-center" },
+];
+
 export function PaymentStatus() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "cleared" | "partial" | "critical">("all");
   const [selectedStudent, setSelectedStudent] = useState<StudentPayment | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
   const filtered = MOCK_STUDENTS.filter((s) => {
     const matchSearch =
@@ -164,9 +169,6 @@ export function PaymentStatus() {
       (filterStatus === "critical" && s.percentPaid < 60);
     return matchSearch && matchStatus;
   });
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   if (selectedStudent) {
     return <StudentDetail student={selectedStudent} onBack={() => setSelectedStudent(null)} />;
@@ -182,7 +184,6 @@ export function PaymentStatus() {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="text-2xl font-bold text-green-700">{MOCK_STUDENTS.filter((s) => s.percentPaid === 100).length}</div>
@@ -202,7 +203,6 @@ export function PaymentStatus() {
         </div>
       </div>
 
-      {/* Search and Filters */}
       <div className="flex gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -219,9 +219,7 @@ export function PaymentStatus() {
               key={f}
               onClick={() => setFilterStatus(f)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                filterStatus === f
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
+                filterStatus === f ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
               }`}
             >
               {f === "all" ? "All" : f === "cleared" ? "Fully Paid" : f === "partial" ? "Partial" : "Critical"}
@@ -230,24 +228,15 @@ export function PaymentStatus() {
         </div>
       </div>
 
-      {/* Student Table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[1fr_120px_130px_130px_100px_80px_80px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-4 py-3 text-xs font-semibold text-gray-600">Student</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Student ID</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Total Fees</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Balance</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">% Paid</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Moodle</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Exams</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Action</div>
-        </div>
-        {paginatedData.map((s) => (
-          <div
-            key={s.id}
-            className="grid grid-cols-[1fr_120px_130px_130px_100px_80px_80px_80px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer"
-            onClick={() => setSelectedStudent(s)}
-          >
+      <DataGrid
+        columns={PAYMENT_STATUS_COLUMNS}
+        colTemplate="1fr 120px 130px 130px 100px 80px 80px 80px"
+        data={filtered}
+        getKey={(s) => s.id}
+        totalLabel="students"
+        onRowClick={setSelectedStudent}
+        renderRow={(s) => (
+          <>
             <div className="px-4 py-3">
               <div className="text-sm font-medium text-gray-900">{s.name}</div>
               <div className="text-xs text-gray-500">{s.program}</div>
@@ -273,70 +262,33 @@ export function PaymentStatus() {
               </div>
             </div>
             <div className="px-3 py-3 flex items-center justify-center">
-              {s.moodleAccess ? (
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              ) : (
-                <XCircle className="h-4 w-4 text-red-500" />
-              )}
+              {s.moodleAccess ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-red-500" />}
             </div>
             <div className="px-3 py-3 flex items-center justify-center">
-              {s.examEligible ? (
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              ) : (
-                <XCircle className="h-4 w-4 text-red-500" />
-              )}
+              {s.examEligible ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-red-500" />}
             </div>
             <div className="px-3 py-3 flex items-center justify-center">
-              <button className="text-xs text-blue-600 hover:underline font-medium" onClick={(e) => { e.stopPropagation(); setSelectedStudent(s); }}>
+              <button
+                className="text-xs text-blue-600 hover:underline font-medium"
+                onClick={(e) => { e.stopPropagation(); setSelectedStudent(s); }}
+              >
                 View
               </button>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} students
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-                  currentPage === page
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      />
     </div>
   );
 }
 
-// -- Student Detail View --
+const PAYMENT_HISTORY_COLUMNS = [
+  { label: "Date" },
+  { label: "Reference" },
+  { label: "Method" },
+  { label: "Amount", className: "text-right" },
+];
+
 function StudentDetail({ student, onBack }: { student: StudentPayment; onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<"overview" | "payments" | "clearance">("overview");
 
@@ -372,7 +324,6 @@ function StudentDetail({ student, onBack }: { student: StudentPayment; onBack: (
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
         {(["overview", "payments", "clearance"] as const).map((tab) => (
           <button
@@ -391,7 +342,6 @@ function StudentDetail({ student, onBack }: { student: StudentPayment; onBack: (
 
       {activeTab === "overview" && (
         <div className="space-y-6">
-          {/* Payment Breakdown */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-slate-50 border border-gray-200 rounded-lg p-4">
               <div className="text-xs text-gray-500 mb-1">Total Fees</div>
@@ -407,7 +357,6 @@ function StudentDetail({ student, onBack }: { student: StudentPayment; onBack: (
             </div>
           </div>
 
-          {/* Payment Progress */}
           <div className="border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Payment Progress</span>
@@ -432,7 +381,6 @@ function StudentDetail({ student, onBack }: { student: StudentPayment; onBack: (
             </div>
           </div>
 
-          {/* Access Status */}
           <div className="grid grid-cols-2 gap-4">
             <div className={`flex items-center gap-3 p-4 rounded-lg border ${student.moodleAccess ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
               <Monitor className={`h-5 w-5 ${student.moodleAccess ? "text-green-600" : "text-red-600"}`} />
@@ -466,28 +414,21 @@ function StudentDetail({ student, onBack }: { student: StudentPayment; onBack: (
 
       {activeTab === "payments" && (
         <div>
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-[100px_1fr_120px_120px] bg-slate-100 border-b border-gray-200">
-              <div className="px-4 py-3 text-xs font-semibold text-gray-600">Date</div>
-              <div className="px-4 py-3 text-xs font-semibold text-gray-600">Reference</div>
-              <div className="px-4 py-3 text-xs font-semibold text-gray-600">Method</div>
-              <div className="px-4 py-3 text-xs font-semibold text-gray-600 text-right">Amount</div>
-            </div>
-            {student.payments.map((p) => (
-              <div key={p.id} className="grid grid-cols-[100px_1fr_120px_120px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors">
+          <DataGrid
+            columns={PAYMENT_HISTORY_COLUMNS}
+            colTemplate="100px 1fr 120px 120px"
+            data={student.payments}
+            getKey={(p) => p.id}
+            totalLabel="payments"
+            renderRow={(p) => (
+              <>
                 <div className="px-4 py-3 text-sm text-gray-700">{p.date}</div>
                 <div className="px-4 py-3 text-sm text-gray-800 font-mono">{p.reference}</div>
                 <div className="px-4 py-3 text-sm text-gray-600">{p.method}</div>
                 <div className="px-4 py-3 text-sm font-medium text-green-700 text-right">{formatCurrency(p.amount)}</div>
-              </div>
-            ))}
-            <div className="grid grid-cols-[100px_1fr_120px_120px] bg-slate-50 border-t border-gray-200">
-              <div className="px-4 py-3 text-sm font-semibold text-gray-700" />
-              <div className="px-4 py-3 text-sm font-semibold text-gray-700" />
-              <div className="px-4 py-3 text-sm font-semibold text-gray-700">Total Paid</div>
-              <div className="px-4 py-3 text-sm font-bold text-green-700 text-right">{formatCurrency(student.amountPaid)}</div>
-            </div>
-          </div>
+              </>
+            )}
+          />
           <div className="mt-4 flex gap-2">
             <button className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium">
               <DollarSign className="h-4 w-4" /> Record Payment
@@ -506,7 +447,6 @@ function StudentDetail({ student, onBack }: { student: StudentPayment; onBack: (
   );
 }
 
-// -- Clearance View (embedded in detail) --
 function ClearanceView({ student }: { student: StudentPayment }) {
   const departments: Array<{
     key: keyof StudentPayment["clearance"];
@@ -552,9 +492,20 @@ function ClearanceView({ student }: { student: StudentPayment }) {
   );
 }
 
-// -- Standalone Clearance Page --
+const CLEARANCE_SUMMARY_COLUMNS = [
+  { label: "Student" },
+  { label: "Student ID" },
+  { label: "Hostel", className: "text-center" },
+  { label: "Medical", className: "text-center" },
+  { label: "Classes", className: "text-center" },
+  { label: "Exams", className: "text-center" },
+  { label: "Library", className: "text-center" },
+  { label: "Action", className: "text-center" },
+];
+
 export function StudentClearance() {
   const [search, setSearch] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState<StudentPayment | null>(null);
 
   const filtered = MOCK_STUDENTS.filter(
     (s) =>
@@ -562,7 +513,10 @@ export function StudentClearance() {
       s.studentId.toLowerCase().includes(search.toLowerCase())
   );
 
-  const [selectedStudent, setSelectedStudent] = useState<StudentPayment | null>(null);
+  const icon = (status: "cleared" | "pending" | "blocked") =>
+    status === "cleared" ? <CheckCircle className="h-4 w-4 text-green-600" /> :
+    status === "pending" ? <AlertTriangle className="h-4 w-4 text-yellow-500" /> :
+    <XCircle className="h-4 w-4 text-red-500" />;
 
   if (selectedStudent) {
     return (
@@ -602,52 +556,55 @@ export function StudentClearance() {
         />
       </div>
 
-      <div className="border border-gray-200 rounded-lg overflow-hidden flex-1">
-        <div className="grid grid-cols-[1fr_120px_80px_80px_80px_80px_80px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-4 py-3 text-xs font-semibold text-gray-600">Student</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Student ID</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Hostel</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Medical</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Classes</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Exams</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Library</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Action</div>
-        </div>
-        {filtered.map((s) => {
-          const icon = (status: "cleared" | "pending" | "blocked") =>
-            status === "cleared" ? <CheckCircle className="h-4 w-4 text-green-600" /> : status === "pending" ? <AlertTriangle className="h-4 w-4 text-yellow-500" /> : <XCircle className="h-4 w-4 text-red-500" />;
-          return (
-            <div key={s.id} className="grid grid-cols-[1fr_120px_80px_80px_80px_80px_80px_80px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer" onClick={() => setSelectedStudent(s)}>
-              <div className="px-4 py-3">
-                <div className="text-sm font-medium text-gray-900">{s.name}</div>
-                <div className="text-xs text-gray-500">{s.program}</div>
-              </div>
-              <div className="px-3 py-3 text-sm text-gray-700 flex items-center">{s.studentId}</div>
-              <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.hostel)}</div>
-              <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.medical)}</div>
-              <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.classes)}</div>
-              <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.exams)}</div>
-              <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.library)}</div>
-              <div className="px-3 py-3 flex items-center justify-center">
-                <button className="text-xs text-blue-600 hover:underline font-medium" onClick={(e) => { e.stopPropagation(); setSelectedStudent(s); }}>
-                  Details
-                </button>
-              </div>
+      <DataGrid
+        columns={CLEARANCE_SUMMARY_COLUMNS}
+        colTemplate="1fr 120px 80px 80px 80px 80px 80px 80px"
+        data={filtered}
+        getKey={(s) => s.id}
+        totalLabel="students"
+        onRowClick={setSelectedStudent}
+        renderRow={(s) => (
+          <>
+            <div className="px-4 py-3">
+              <div className="text-sm font-medium text-gray-900">{s.name}</div>
+              <div className="text-xs text-gray-500">{s.program}</div>
             </div>
-          );
-        })}
-      </div>
+            <div className="px-3 py-3 text-sm text-gray-700 flex items-center">{s.studentId}</div>
+            <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.hostel)}</div>
+            <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.medical)}</div>
+            <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.classes)}</div>
+            <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.exams)}</div>
+            <div className="px-3 py-3 flex items-center justify-center">{icon(s.clearance.library)}</div>
+            <div className="px-3 py-3 flex items-center justify-center">
+              <button
+                className="text-xs text-blue-600 hover:underline font-medium"
+                onClick={(e) => { e.stopPropagation(); setSelectedStudent(s); }}
+              >
+                Details
+              </button>
+            </div>
+          </>
+        )}
+      />
     </div>
   );
 }
 
-// -- Fee Structure Page --
+const FEE_STRUCTURE_COLUMNS = [
+  { label: "Program" },
+  { label: "Tuition", className: "text-right" },
+  { label: "Functional", className: "text-right" },
+  { label: "ICT", className: "text-right" },
+  { label: "Library", className: "text-right" },
+  { label: "Total", className: "text-right" },
+];
+
 export function FeeStructure() {
   const programs = [
-    { name: "Bachelor of Business Administration", tuition: 3500000, functional: 500000, ict: 300000, library: 200000, total: 4500000 },
-    { name: "Bachelor of Computer Science", tuition: 4000000, functional: 500000, ict: 300000, library: 200000, total: 5000000 },
-    { name: "Bachelor of Education", tuition: 2800000, functional: 500000, ict: 300000, library: 200000, total: 3800000 },
-    { name: "Bachelor of Theology", tuition: 2500000, functional: 500000, ict: 300000, library: 200000, total: 3500000 },
+    { id: "1", name: "Bachelor of Business Administration", tuition: 3500000, functional: 500000, ict: 300000, library: 200000, total: 4500000 },
+    { id: "2", name: "Bachelor of Computer Science", tuition: 4000000, functional: 500000, ict: 300000, library: 200000, total: 5000000 },
+    { id: "3", name: "Bachelor of Education", tuition: 2800000, functional: 500000, ict: 300000, library: 200000, total: 3800000 },
+    { id: "4", name: "Bachelor of Theology", tuition: 2500000, functional: 500000, ict: 300000, library: 200000, total: 3500000 },
   ];
 
   return (
@@ -660,26 +617,22 @@ export function FeeStructure() {
         </div>
       </div>
 
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[1fr_120px_120px_100px_100px_130px] bg-slate-100 border-b border-gray-200">
-          <div className="px-4 py-3 text-xs font-semibold text-gray-600">Program</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Tuition</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Functional</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">ICT</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Library</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Total</div>
-        </div>
-        {programs.map((p) => (
-          <div key={p.name} className="grid grid-cols-[1fr_120px_120px_100px_100px_130px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors">
+      <DataGrid
+        columns={FEE_STRUCTURE_COLUMNS}
+        colTemplate="1fr 120px 120px 100px 100px 130px"
+        data={programs}
+        getKey={(p) => p.id}
+        renderRow={(p) => (
+          <>
             <div className="px-4 py-3 text-sm font-medium text-gray-900">{p.name}</div>
             <div className="px-3 py-3 text-sm text-gray-700 text-right">{formatCurrency(p.tuition)}</div>
             <div className="px-3 py-3 text-sm text-gray-700 text-right">{formatCurrency(p.functional)}</div>
             <div className="px-3 py-3 text-sm text-gray-700 text-right">{formatCurrency(p.ict)}</div>
             <div className="px-3 py-3 text-sm text-gray-700 text-right">{formatCurrency(p.library)}</div>
             <div className="px-3 py-3 text-sm font-bold text-gray-900 text-right">{formatCurrency(p.total)}</div>
-          </div>
-        ))}
-      </div>
+          </>
+        )}
+      />
     </div>
   );
 }

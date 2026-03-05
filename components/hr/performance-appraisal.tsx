@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardCheck, Eye, CheckCircle, AlertTriangle, Clock, X } from "lucide-react";
+import { ClipboardCheck, CheckCircle, AlertTriangle, Clock, X } from "lucide-react";
+import { DataGrid } from "@/components/ui/data-grid";
 
 interface AppraisalRecord {
   id: string;
@@ -72,7 +73,21 @@ const MOCK_ADMIN_APPRAISALS: AppraisalRecord[] = [
   },
 ];
 
+const SCORES_COLUMNS = [
+  { label: "Criteria" },
+  { label: "Self Score", className: "text-center" },
+  { label: "Supervisor", className: "text-center" },
+  { label: "Diff", className: "text-center" },
+];
+
 function AppraisalDetailModal({ appraisal, onClose, criteria }: { appraisal: AppraisalRecord; onClose: () => void; criteria: string[] }) {
+  const scoreRows = criteria.map((c, i) => ({
+    id: `${appraisal.id}-${i}`,
+    criteria: c,
+    selfScore: appraisal.lecturerScores[i]?.score ?? null,
+    supScore: appraisal.supervisorScores[i]?.score ?? null,
+  }));
+
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-auto">
@@ -97,22 +112,22 @@ function AppraisalDetailModal({ appraisal, onClose, criteria }: { appraisal: App
             </div>
           )}
 
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-[1fr_100px_100px_80px] bg-slate-100 border-b border-gray-200">
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Criteria</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 text-center">Self Score</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 text-center">Supervisor</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 text-center">Diff</div>
-            </div>
-            {criteria.map((c, i) => {
-              const selfScore = appraisal.lecturerScores[i]?.score ?? "-";
-              const supScore = appraisal.supervisorScores[i]?.score ?? "-";
-              const diff = typeof selfScore === "number" && typeof supScore === "number" ? selfScore - supScore : null;
+          <DataGrid
+            columns={SCORES_COLUMNS}
+            colTemplate="1fr 100px 100px 80px"
+            data={scoreRows}
+            getKey={(r) => r.id}
+            renderRow={(r) => {
+              const diff = r.selfScore !== null && r.supScore !== null ? r.selfScore - r.supScore : null;
               return (
-                <div key={c} className="grid grid-cols-[1fr_100px_100px_80px] border-b border-gray-100">
-                  <div className="px-3 py-2.5 text-sm text-gray-700">{c}</div>
-                  <div className="px-3 py-2.5 text-sm text-gray-800 text-center font-medium">{selfScore}/10</div>
-                  <div className="px-3 py-2.5 text-sm text-gray-800 text-center font-medium">{typeof supScore === "number" ? `${supScore}/10` : "Pending"}</div>
+                <>
+                  <div className="px-3 py-2.5 text-sm text-gray-700">{r.criteria}</div>
+                  <div className="px-3 py-2.5 text-sm text-gray-800 text-center font-medium">
+                    {r.selfScore !== null ? `${r.selfScore}/10` : "-"}
+                  </div>
+                  <div className="px-3 py-2.5 text-sm text-gray-800 text-center font-medium">
+                    {r.supScore !== null ? `${r.supScore}/10` : "Pending"}
+                  </div>
                   <div className="px-3 py-2.5 text-sm text-center font-medium">
                     {diff !== null ? (
                       <span className={Math.abs(diff) > 2 ? "text-red-600" : diff !== 0 ? "text-amber-600" : "text-green-600"}>
@@ -120,10 +135,10 @@ function AppraisalDetailModal({ appraisal, onClose, criteria }: { appraisal: App
                       </span>
                     ) : "-"}
                   </div>
-                </div>
+                </>
               );
-            })}
-          </div>
+            }}
+          />
 
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
@@ -149,23 +164,29 @@ function AppraisalDetailModal({ appraisal, onClose, criteria }: { appraisal: App
   );
 }
 
+const APPRAISAL_COLUMNS = [
+  { label: "ID" },
+  { label: "Staff" },
+  { label: "Period" },
+  { label: "Self-Eval" },
+  { label: "Supervisor" },
+  { label: "Status" },
+  { label: "View" },
+];
+
 function AppraisalTable({ records, criteria }: { records: AppraisalRecord[]; criteria: string[] }) {
   const [viewAppraisal, setViewAppraisal] = useState<AppraisalRecord | null>(null);
 
   return (
     <>
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[60px_1fr_1fr_110px_110px_100px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">ID</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Staff</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Period</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Self-Eval</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Supervisor</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Status</div>
-          <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">View</div>
-        </div>
-        {records.map((a) => (
-          <div key={a.id} className="grid grid-cols-[60px_1fr_1fr_110px_110px_100px_80px] border-b border-gray-100 hover:bg-blue-50 transition-colors">
+      <DataGrid
+        columns={APPRAISAL_COLUMNS}
+        colTemplate="60px 1fr 1fr 110px 110px 100px 80px"
+        data={records}
+        getKey={(a) => a.id}
+        totalLabel="records"
+        renderRow={(a) => (
+          <>
             <div className="px-3 py-2.5 text-sm text-gray-600">{a.id}</div>
             <div className="px-3 py-2.5 text-sm text-gray-800 font-medium">{a.staffName}</div>
             <div className="px-3 py-2.5 text-sm text-gray-600">{a.period}</div>
@@ -193,13 +214,16 @@ function AppraisalTable({ records, criteria }: { records: AppraisalRecord[]; cri
               )}
             </div>
             <div className="px-3 py-2.5">
-              <button onClick={() => setViewAppraisal(a)} className="p-1 hover:bg-gray-200 rounded transition-colors">
-                <Eye className="h-4 w-4 text-blue-600" />
+              <button
+                onClick={(e) => { e.stopPropagation(); setViewAppraisal(a); }}
+                className="text-xs text-blue-600 hover:underline font-medium"
+              >
+                View
               </button>
             </div>
-          </div>
-        ))}
-      </div>
+          </>
+        )}
+      />
       {viewAppraisal && <AppraisalDetailModal appraisal={viewAppraisal} onClose={() => setViewAppraisal(null)} criteria={criteria} />}
     </>
   );

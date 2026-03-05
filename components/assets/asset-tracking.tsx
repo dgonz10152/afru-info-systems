@@ -1,29 +1,20 @@
 "use client";
 
-import React from "react"
-
+import React from "react";
 import { useState } from "react";
 import {
   Search,
   Package,
   ArrowLeft,
-  Wrench,
-  MapPin,
-  Tag,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Plus,
   History,
-  BarChart3,
   Box,
   Monitor,
   Truck,
   Building2,
+  Tag,
 } from "lucide-react";
+import { DataGrid } from "@/components/ui/data-grid";
 
-// --- Types ---
 interface Asset {
   id: string;
   assetTag: string;
@@ -51,7 +42,6 @@ interface Restoration {
   status: "completed" | "in-progress" | "scheduled";
 }
 
-// --- Mock Data ---
 const MOCK_ASSETS: Asset[] = [
   {
     id: "1", assetTag: "AST-001", name: "Dell OptiPlex 7090 Desktop", category: "IT Equipment",
@@ -127,8 +117,7 @@ const MOCK_ASSETS: Asset[] = [
   },
 ];
 
-const formatCurrency = (amount: number) =>
-  `UGX ${amount.toLocaleString()}`;
+const formatCurrency = (amount: number) => `UGX ${amount.toLocaleString()}`;
 
 const conditionConfig: Record<string, { bg: string; text: string; label: string }> = {
   excellent: { bg: "bg-green-100", text: "text-green-700", label: "Excellent" },
@@ -147,14 +136,35 @@ const categoryIcon: Record<string, React.ReactNode> = {
   "Building": <Building2 className="h-4 w-4 text-gray-600" />,
 };
 
-// --- Asset Dashboard ---
+const typeColor: Record<string, { bg: string; text: string }> = {
+  repair: { bg: "bg-red-100", text: "text-red-700" },
+  maintenance: { bg: "bg-blue-100", text: "text-blue-700" },
+  refurbishment: { bg: "bg-purple-100", text: "text-purple-700" },
+  replacement: { bg: "bg-orange-100", text: "text-orange-700" },
+};
+
+const restorationStatusColor: Record<string, { bg: string; text: string }> = {
+  completed: { bg: "bg-green-100", text: "text-green-700" },
+  "in-progress": { bg: "bg-yellow-100", text: "text-yellow-700" },
+  scheduled: { bg: "bg-blue-100", text: "text-blue-700" },
+};
+
+const ASSET_COLUMNS = [
+  { label: "Tag" },
+  { label: "Asset Name" },
+  { label: "Category" },
+  { label: "Location" },
+  { label: "Qty", className: "text-center" },
+  { label: "Total Value", className: "text-right" },
+  { label: "Condition", className: "text-center" },
+  { label: "View", className: "text-center" },
+];
+
 export function AssetDashboard() {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterCondition, setFilterCondition] = useState<string>("all");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
   const categories = [...new Set(MOCK_ASSETS.map((a) => a.category))];
 
@@ -169,14 +179,10 @@ export function AssetDashboard() {
     return matchSearch && matchCategory && matchCondition;
   });
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
   const totalAssetValue = MOCK_ASSETS.reduce((sum, a) => sum + a.quantity * a.unitValue, 0);
   const totalItems = MOCK_ASSETS.reduce((sum, a) => sum + a.quantity, 0);
   const needsAttention = MOCK_ASSETS.filter((a) => a.condition === "poor" || a.condition === "fair").length;
 
-  // Detail View
   if (selectedAsset) {
     const a = selectedAsset;
     const cond = conditionConfig[a.condition];
@@ -198,7 +204,6 @@ export function AssetDashboard() {
           <span className={`px-3 py-1 text-xs font-medium rounded-full ${cond.bg} ${cond.text}`}>{cond.label}</span>
         </div>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-4 gap-3 mb-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
             <div className="text-2xl font-bold text-blue-700">{a.quantity}</div>
@@ -218,7 +223,6 @@ export function AssetDashboard() {
           </div>
         </div>
 
-        {/* Info Grid */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="border border-gray-200 rounded-lg p-4">
             <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Asset Details</h4>
@@ -246,24 +250,15 @@ export function AssetDashboard() {
             ) : (
               <div className="space-y-3 max-h-48 overflow-y-auto">
                 {a.restorations.map((r) => {
-                  const typeColor: Record<string, string> = {
-                    repair: "bg-red-100 text-red-700",
-                    maintenance: "bg-blue-100 text-blue-700",
-                    refurbishment: "bg-purple-100 text-purple-700",
-                    replacement: "bg-orange-100 text-orange-700",
-                  };
-                  const statusColor: Record<string, string> = {
-                    completed: "text-green-600",
-                    "in-progress": "text-yellow-600",
-                    scheduled: "text-blue-600",
-                  };
+                  const tc = typeColor[r.type];
+                  const sc = restorationStatusColor[r.status];
                   return (
                     <div key={r.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between mb-1">
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded ${typeColor[r.type]}`}>
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded ${tc.bg} ${tc.text}`}>
                           {r.type.charAt(0).toUpperCase() + r.type.slice(1)}
                         </span>
-                        <span className={`text-xs font-medium ${statusColor[r.status]}`}>
+                        <span className={`text-xs font-medium ${sc.text}`}>
                           {r.status === "completed" ? "Completed" : r.status === "in-progress" ? "In Progress" : "Scheduled"}
                         </span>
                       </div>
@@ -293,7 +288,6 @@ export function AssetDashboard() {
         </div>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
           <div className="text-2xl font-bold text-blue-700">{MOCK_ASSETS.length}</div>
@@ -313,21 +307,20 @@ export function AssetDashboard() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex items-center border border-gray-300 rounded-lg px-3 py-2 bg-white flex-1 min-w-[200px]">
           <Search className="h-4 w-4 text-gray-400 mr-2" />
           <input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setSearch(e.target.value)}
             className="flex-1 text-sm bg-transparent placeholder-gray-400 focus:outline-none text-gray-800"
             placeholder="Search by name, tag, department, location..."
           />
         </div>
         <select
           value={filterCategory}
-          onChange={(e) => { setFilterCategory(e.target.value); setCurrentPage(1); }}
+          onChange={(e) => setFilterCategory(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="all">All Categories</option>
@@ -335,7 +328,7 @@ export function AssetDashboard() {
         </select>
         <select
           value={filterCondition}
-          onChange={(e) => { setFilterCondition(e.target.value); setCurrentPage(1); }}
+          onChange={(e) => setFilterCondition(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="all">All Conditions</option>
@@ -343,26 +336,18 @@ export function AssetDashboard() {
         </select>
       </div>
 
-      {/* Grid */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[70px_1fr_120px_120px_70px_100px_100px_60px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Tag</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Asset Name</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Category</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Location</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Qty</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Total Value</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Condition</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">View</div>
-        </div>
-        {paginatedData.map((a) => {
+      <DataGrid
+        columns={ASSET_COLUMNS}
+        colTemplate="70px 1fr 120px 120px 70px 100px 100px 60px"
+        data={filtered}
+        getKey={(a) => a.id}
+        pageSize={6}
+        totalLabel="assets"
+        onRowClick={setSelectedAsset}
+        renderRow={(a) => {
           const cond = conditionConfig[a.condition];
           return (
-            <div
-              key={a.id}
-              className="grid grid-cols-[70px_1fr_120px_120px_70px_100px_100px_60px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer"
-              onClick={() => setSelectedAsset(a)}
-            >
+            <>
               <div className="px-3 py-3 text-sm font-mono text-blue-700">{a.assetTag}</div>
               <div className="px-3 py-3">
                 <div className="text-sm font-medium text-gray-900">{a.name}</div>
@@ -379,63 +364,35 @@ export function AssetDashboard() {
                 <span className={`px-2 py-0.5 text-xs rounded font-medium ${cond.bg} ${cond.text}`}>{cond.label}</span>
               </div>
               <div className="px-3 py-3 flex items-center justify-center">
-                <button className="text-xs text-blue-600 hover:underline font-medium" onClick={(e) => { e.stopPropagation(); setSelectedAsset(a); }}>
+                <button
+                  className="text-xs text-blue-600 hover:underline font-medium"
+                  onClick={(e) => { e.stopPropagation(); setSelectedAsset(a); }}
+                >
                   View
                 </button>
               </div>
-            </div>
+            </>
           );
-        })}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} assets
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-                  currentPage === page
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+        }}
+      />
     </div>
   );
 }
 
-// --- Restoration History (global view) ---
+const RESTORATION_COLUMNS = [
+  { label: "Date" },
+  { label: "Asset" },
+  { label: "Type", className: "text-center" },
+  { label: "Description" },
+  { label: "Vendor" },
+  { label: "Cost", className: "text-right" },
+  { label: "Status", className: "text-center" },
+];
+
 export function RestorationHistory() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
 
   const allRestorations = MOCK_ASSETS.flatMap((a) =>
     a.restorations.map((r) => ({ ...r, assetName: a.name, assetTag: a.assetTag, assetCategory: a.category }))
@@ -452,23 +409,7 @@ export function RestorationHistory() {
     return matchSearch && matchType && matchStatus;
   });
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
   const totalCost = allRestorations.reduce((s, r) => s + r.cost, 0);
-
-  const typeColor: Record<string, { bg: string; text: string }> = {
-    repair: { bg: "bg-red-100", text: "text-red-700" },
-    maintenance: { bg: "bg-blue-100", text: "text-blue-700" },
-    refurbishment: { bg: "bg-purple-100", text: "text-purple-700" },
-    replacement: { bg: "bg-orange-100", text: "text-orange-700" },
-  };
-
-  const statusColor: Record<string, { bg: string; text: string }> = {
-    completed: { bg: "bg-green-100", text: "text-green-700" },
-    "in-progress": { bg: "bg-yellow-100", text: "text-yellow-700" },
-    scheduled: { bg: "bg-blue-100", text: "text-blue-700" },
-  };
 
   return (
     <div className="p-6 flex flex-col h-full bg-white overflow-auto">
@@ -480,7 +421,6 @@ export function RestorationHistory() {
         </div>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
           <div className="text-2xl font-bold text-blue-700">{allRestorations.length}</div>
@@ -500,21 +440,20 @@ export function RestorationHistory() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex items-center border border-gray-300 rounded-lg px-3 py-2 bg-white flex-1 min-w-[200px]">
           <Search className="h-4 w-4 text-gray-400 mr-2" />
           <input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setSearch(e.target.value)}
             className="flex-1 text-sm bg-transparent placeholder-gray-400 focus:outline-none text-gray-800"
             placeholder="Search by asset, vendor, description..."
           />
         </div>
         <select
           value={filterType}
-          onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1); }}
+          onChange={(e) => setFilterType(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="all">All Types</option>
@@ -525,7 +464,7 @@ export function RestorationHistory() {
         </select>
         <select
           value={filterStatus}
-          onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+          onChange={(e) => setFilterStatus(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="all">All Statuses</option>
@@ -535,22 +474,18 @@ export function RestorationHistory() {
         </select>
       </div>
 
-      {/* Grid */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[90px_1fr_100px_1fr_130px_120px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Date</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Asset</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Type</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Description</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Vendor</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Cost</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Status</div>
-        </div>
-        {paginatedData.map((r) => {
+      <DataGrid
+        columns={RESTORATION_COLUMNS}
+        colTemplate="90px 1fr 100px 1fr 130px 120px 80px"
+        data={filtered}
+        getKey={(r) => r.id}
+        pageSize={8}
+        totalLabel="records"
+        renderRow={(r) => {
           const tc = typeColor[r.type];
-          const sc = statusColor[r.status];
+          const sc = restorationStatusColor[r.status];
           return (
-            <div key={r.id} className="grid grid-cols-[90px_1fr_100px_1fr_130px_120px_80px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors">
+            <>
               <div className="px-3 py-3 text-sm text-gray-700">{r.date}</div>
               <div className="px-3 py-3">
                 <div className="text-sm font-medium text-gray-900 truncate">{r.assetName}</div>
@@ -569,48 +504,10 @@ export function RestorationHistory() {
                   {r.status === "completed" ? "Done" : r.status === "in-progress" ? "Active" : "Soon"}
                 </span>
               </div>
-            </div>
+            </>
           );
-        })}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} records
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-                  currentPage === page
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+        }}
+      />
     </div>
   );
 }

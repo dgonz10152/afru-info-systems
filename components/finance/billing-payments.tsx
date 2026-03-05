@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Search,
   Download,
-  Filter,
   FileText,
   DollarSign,
   CheckCircle,
@@ -13,8 +12,8 @@ import {
   ArrowUpDown,
   FileSpreadsheet,
 } from "lucide-react";
+import { DataGrid } from "@/components/ui/data-grid";
 
-// -- Mock Billing Data --
 interface BillingRecord {
   id: string;
   invoiceNo: string;
@@ -77,15 +76,29 @@ const MOCK_BILLING: BillingRecord[] = [
 
 const formatCurrency = (amount: number) => `UGX ${amount.toLocaleString()}`;
 
-// -- Billing Dashboard --
+const statusConfig = {
+  paid: { bg: "bg-green-100", text: "text-green-700", icon: <CheckCircle className="h-3.5 w-3.5" /> },
+  partial: { bg: "bg-yellow-100", text: "text-yellow-700", icon: <Clock className="h-3.5 w-3.5" /> },
+  unpaid: { bg: "bg-gray-100", text: "text-gray-700", icon: <XCircle className="h-3.5 w-3.5" /> },
+  overdue: { bg: "bg-red-100", text: "text-red-700", icon: <XCircle className="h-3.5 w-3.5" /> },
+};
+
+const BILLING_COLUMNS = [
+  { label: "Invoice" },
+  { label: "Description / Payer" },
+  { label: "Category" },
+  { label: "Amount", className: "text-right" },
+  { label: "Balance", className: "text-right" },
+  { label: "Due Date" },
+  { label: "Status", className: "text-center" },
+];
+
 export function BillingDashboard() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "paid" | "partial" | "unpaid" | "overdue">("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [sortField, setSortField] = useState<"date" | "amount">("date");
   const [sortAsc, setSortAsc] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
   const categories = [...new Set(MOCK_BILLING.map((b) => b.category))];
 
@@ -106,19 +119,9 @@ export function BillingDashboard() {
       return sortAsc ? a.amount - b.amount : b.amount - a.amount;
     });
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
   const totalBilled = MOCK_BILLING.reduce((s, b) => s + b.amount, 0);
   const totalCollected = MOCK_BILLING.reduce((s, b) => s + b.amountPaid, 0);
   const totalOutstanding = MOCK_BILLING.reduce((s, b) => s + b.balance, 0);
-
-  const statusConfig = {
-    paid: { bg: "bg-green-100", text: "text-green-700", icon: <CheckCircle className="h-3.5 w-3.5" /> },
-    partial: { bg: "bg-yellow-100", text: "text-yellow-700", icon: <Clock className="h-3.5 w-3.5" /> },
-    unpaid: { bg: "bg-gray-100", text: "text-gray-700", icon: <XCircle className="h-3.5 w-3.5" /> },
-    overdue: { bg: "bg-red-100", text: "text-red-700", icon: <XCircle className="h-3.5 w-3.5" /> },
-  };
 
   return (
     <div className="p-6 flex flex-col h-full bg-white overflow-auto">
@@ -130,7 +133,6 @@ export function BillingDashboard() {
         </div>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="text-2xl font-bold text-blue-700">{formatCurrency(totalBilled)}</div>
@@ -150,7 +152,6 @@ export function BillingDashboard() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -185,7 +186,7 @@ export function BillingDashboard() {
           ))}
         </select>
         <button
-          onClick={() => { setSortAsc(!sortAsc); }}
+          onClick={() => setSortAsc(!sortAsc)}
           className="flex items-center gap-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors bg-white"
         >
           <ArrowUpDown className="h-3.5 w-3.5" />
@@ -193,21 +194,16 @@ export function BillingDashboard() {
         </button>
       </div>
 
-      {/* Table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[100px_1fr_120px_120px_130px_130px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Invoice</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Description / Payer</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Category</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Amount</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Balance</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Due Date</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Status</div>
-        </div>
-        {paginatedData.map((b) => {
+      <DataGrid
+        columns={BILLING_COLUMNS}
+        colTemplate="100px 1fr 120px 120px 130px 130px 80px"
+        data={filtered}
+        getKey={(b) => b.id}
+        totalLabel="invoices"
+        renderRow={(b) => {
           const sc = statusConfig[b.status];
           return (
-            <div key={b.id} className="grid grid-cols-[100px_1fr_120px_120px_130px_130px_80px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors">
+            <>
               <div className="px-3 py-3 text-sm font-mono text-blue-700">{b.invoiceNo}</div>
               <div className="px-3 py-3">
                 <div className="text-sm font-medium text-gray-900">{b.description}</div>
@@ -224,53 +220,21 @@ export function BillingDashboard() {
                   {sc.icon} {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
                 </span>
               </div>
-            </div>
+            </>
           );
-        })}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} invoices
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-                  currentPage === page
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+        }}
+      />
     </div>
   );
 }
 
-// -- QuickBooks Export Page --
+const EXPORT_HISTORY_COLUMNS = [
+  { label: "Date" },
+  { label: "Type" },
+  { label: "Records", className: "text-right" },
+  { label: "Exported By" },
+];
+
 export function QuickBooksExport() {
   const [dateFrom, setDateFrom] = useState("2025-07-01");
   const [dateTo, setDateTo] = useState("2026-01-31");
@@ -283,7 +247,6 @@ export function QuickBooksExport() {
     setTimeout(() => {
       setIsExporting(false);
       setExported(true);
-      // Generate CSV content
       const headers = ["Invoice No,Description,Category,Payer,Amount,Amount Paid,Balance,Status,Issue Date,Due Date,Payment Date,Payment Method"];
       const rows = MOCK_BILLING.map((b) =>
         `${b.invoiceNo},${b.description},${b.category},${b.payer},${b.amount},${b.amountPaid},${b.balance},${b.status},${b.issueDate},${b.dueDate},${b.paymentDate || ""},${b.paymentMethod || ""}`
@@ -300,10 +263,10 @@ export function QuickBooksExport() {
   };
 
   const exportHistory = [
-    { date: "2026-01-28", type: "All Transactions", records: 847, user: "Mukiibi Jonathan" },
-    { date: "2026-01-15", type: "Income Only", records: 312, user: "Mukiibi Jonathan" },
-    { date: "2025-12-31", type: "All Transactions", records: 1204, user: "Admin" },
-    { date: "2025-12-15", type: "Payroll", records: 45, user: "Admin" },
+    { id: "1", date: "2026-01-28", type: "All Transactions", records: 847, user: "Mukiibi Jonathan" },
+    { id: "2", date: "2026-01-15", type: "Income Only", records: 312, user: "Mukiibi Jonathan" },
+    { id: "3", date: "2025-12-31", type: "All Transactions", records: 1204, user: "Admin" },
+    { id: "4", date: "2025-12-15", type: "Payroll", records: 45, user: "Admin" },
   ];
 
   return (
@@ -317,7 +280,6 @@ export function QuickBooksExport() {
       </div>
 
       <div className="grid grid-cols-2 gap-8">
-        {/* Export Configuration */}
         <div className="space-y-5">
           <h3 className="text-sm font-semibold text-gray-800 mb-3">Export Configuration</h3>
 
@@ -385,25 +347,23 @@ export function QuickBooksExport() {
           )}
         </div>
 
-        {/* Export History */}
         <div>
           <h3 className="text-sm font-semibold text-gray-800 mb-3">Export History</h3>
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-[100px_1fr_80px_120px] bg-slate-100 border-b border-gray-200">
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Date</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Type</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 text-right">Records</div>
-              <div className="px-3 py-2.5 text-xs font-semibold text-gray-600">Exported By</div>
-            </div>
-            {exportHistory.map((h, i) => (
-              <div key={i} className="grid grid-cols-[100px_1fr_80px_120px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors">
+          <DataGrid
+            columns={EXPORT_HISTORY_COLUMNS}
+            colTemplate="100px 1fr 80px 120px"
+            data={exportHistory}
+            getKey={(h) => h.id}
+            totalLabel="exports"
+            renderRow={(h) => (
+              <>
                 <div className="px-3 py-2.5 text-sm text-gray-700">{h.date}</div>
                 <div className="px-3 py-2.5 text-sm text-gray-800">{h.type}</div>
                 <div className="px-3 py-2.5 text-sm text-gray-700 text-right">{h.records}</div>
                 <div className="px-3 py-2.5 text-sm text-gray-600">{h.user}</div>
-              </div>
-            ))}
-          </div>
+              </>
+            )}
+          />
         </div>
       </div>
     </div>

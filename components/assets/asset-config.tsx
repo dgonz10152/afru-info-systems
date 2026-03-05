@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DataGrid } from "@/components/ui/data-grid";
 import {
   Search,
   Plus,
@@ -62,8 +63,6 @@ export function ManageAssets() {
   const [editingAsset, setEditingAsset] = useState<AssetEntry | null>(null);
   const [formData, setFormData] = useState<AssetEntry>(emptyAsset);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
   const filtered = assets.filter((a) =>
     a.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -71,9 +70,6 @@ export function ManageAssets() {
     a.department.toLowerCase().includes(search.toLowerCase()) ||
     a.category.toLowerCase().includes(search.toLowerCase())
   );
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleNew = () => {
     const nextNum = assets.length + 1;
@@ -211,27 +207,32 @@ export function ManageAssets() {
           <input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => { setSearch(e.target.value); }}
             placeholder="Search by name, tag, department, category..."
             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </div>
 
-      {/* Table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[90px_1fr_120px_120px_60px_110px_80px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Tag</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Name</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Category</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Department</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Qty</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Unit Value</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Status</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Actions</div>
-        </div>
-        {paginatedData.map((asset) => (
-          <div key={asset.id} className="grid grid-cols-[90px_1fr_120px_120px_60px_110px_80px_80px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors">
+      <DataGrid
+        columns={[
+          { label: "Tag" },
+          { label: "Name" },
+          { label: "Category" },
+          { label: "Department" },
+          { label: "Qty", className: "text-center" },
+          { label: "Unit Value", className: "text-right" },
+          { label: "Status", className: "text-center" },
+          { label: "Actions", className: "text-center" },
+        ]}
+        colTemplate="90px 1fr 120px 120px 60px 110px 80px 80px"
+        data={filtered}
+        getKey={(asset) => asset.id}
+        pageSize={6}
+        totalLabel="assets"
+        emptyMessage="No assets found."
+        renderRow={(asset) => (
+          <>
             <div className="px-3 py-3 text-sm font-mono text-blue-700">{asset.assetTag}</div>
             <div className="px-3 py-3">
               <div className="text-sm font-medium text-gray-900 truncate">{asset.name}</div>
@@ -253,52 +254,27 @@ export function ManageAssets() {
               </span>
             </div>
             <div className="px-3 py-3 flex items-center justify-center gap-1">
-              <button onClick={() => handleEdit(asset)} className="p-1 hover:bg-blue-100 rounded transition-colors" title="Edit">
+              <button onClick={(e) => { e.stopPropagation(); handleEdit(asset); }} className="p-1 hover:bg-blue-100 rounded transition-colors" title="Edit">
                 <Edit2 className="h-3.5 w-3.5 text-blue-600" />
               </button>
               {deleteConfirm === asset.id ? (
                 <div className="flex items-center gap-1">
-                  <button onClick={() => handleDelete(asset.id)} className="p-1 hover:bg-red-100 rounded transition-colors" title="Confirm delete">
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(asset.id); }} className="p-1 hover:bg-red-100 rounded transition-colors" title="Confirm delete">
                     <CheckCircle className="h-3.5 w-3.5 text-red-600" />
                   </button>
-                  <button onClick={() => setDeleteConfirm(null)} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Cancel">
+                  <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(null); }} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Cancel">
                     <X className="h-3.5 w-3.5 text-gray-500" />
                   </button>
                 </div>
               ) : (
-                <button onClick={() => setDeleteConfirm(asset.id)} className="p-1 hover:bg-red-100 rounded transition-colors" title="Delete">
+                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(asset.id); }} className="p-1 hover:bg-red-100 rounded transition-colors" title="Delete">
                   <Trash2 className="h-3.5 w-3.5 text-red-500" />
                 </button>
               )}
             </div>
-          </div>
-        ))}
-        {paginatedData.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-gray-400">No assets found.</div>
+          </>
         )}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} assets
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button key={page} onClick={() => setCurrentPage(page)} className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${currentPage === page ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}>
-                {page}
-              </button>
-            ))}
-            <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      />
     </div>
   );
 }
@@ -348,8 +324,6 @@ export function ManageInvoices() {
   const [editingInvoice, setEditingInvoice] = useState<InvoiceEntry | null>(null);
   const [formData, setFormData] = useState<InvoiceEntry>(emptyInvoice);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
   // Line items management
   const [newItem, setNewItem] = useState({ description: "", quantity: 1, unitPrice: 0 });
@@ -361,9 +335,6 @@ export function ManageInvoices() {
     inv.serialNumber.toLowerCase().includes(search.toLowerCase()) ||
     inv.jobDescription.toLowerCase().includes(search.toLowerCase())
   );
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleNew = () => {
     const nextNum = invoices.length + 1;
@@ -571,28 +542,33 @@ export function ManageInvoices() {
           <input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => { setSearch(e.target.value); }}
             placeholder="Search by company, invoice no., contact, serial, description..."
             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </div>
 
-      {/* Table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[90px_1fr_130px_110px_130px_80px_80px] bg-slate-100 border-b border-gray-200">
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Invoice No.</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Company / Job</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Contact</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600">Serial No.</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-right">Amount</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Status</div>
-          <div className="px-3 py-3 text-xs font-semibold text-gray-600 text-center">Actions</div>
-        </div>
-        {paginatedData.map((inv) => {
+      <DataGrid
+        columns={[
+          { label: "Invoice No." },
+          { label: "Company / Job" },
+          { label: "Contact" },
+          { label: "Serial No." },
+          { label: "Amount", className: "text-right" },
+          { label: "Status", className: "text-center" },
+          { label: "Actions", className: "text-center" },
+        ]}
+        colTemplate="90px 1fr 130px 110px 130px 80px 80px"
+        data={filtered}
+        getKey={(inv) => inv.id}
+        pageSize={6}
+        totalLabel="invoices"
+        emptyMessage="No invoices found."
+        renderRow={(inv) => {
           const sc = statusConfig[inv.status] || statusConfig.pending;
           return (
-            <div key={inv.id} className="grid grid-cols-[90px_1fr_130px_110px_130px_80px_80px] border-b border-gray-100 hover:bg-blue-50/50 transition-colors">
+            <>
               <div className="px-3 py-3 text-sm font-mono text-blue-700">{inv.invoiceNo}</div>
               <div className="px-3 py-3">
                 <div className="text-sm font-medium text-gray-900 truncate">{inv.companyName}</div>
@@ -610,53 +586,28 @@ export function ManageInvoices() {
                 </span>
               </div>
               <div className="px-3 py-3 flex items-center justify-center gap-1">
-                <button onClick={() => handleEdit(inv)} className="p-1 hover:bg-blue-100 rounded transition-colors" title="Edit">
+                <button onClick={(e) => { e.stopPropagation(); handleEdit(inv); }} className="p-1 hover:bg-blue-100 rounded transition-colors" title="Edit">
                   <Edit2 className="h-3.5 w-3.5 text-blue-600" />
                 </button>
                 {deleteConfirm === inv.id ? (
                   <div className="flex items-center gap-1">
-                    <button onClick={() => handleDelete(inv.id)} className="p-1 hover:bg-red-100 rounded transition-colors" title="Confirm delete">
+                    <button onClick={(e) => { e.stopPropagation(); handleDelete(inv.id); }} className="p-1 hover:bg-red-100 rounded transition-colors" title="Confirm delete">
                       <CheckCircle className="h-3.5 w-3.5 text-red-600" />
                     </button>
-                    <button onClick={() => setDeleteConfirm(null)} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Cancel">
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(null); }} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Cancel">
                       <X className="h-3.5 w-3.5 text-gray-500" />
                     </button>
                   </div>
                 ) : (
-                  <button onClick={() => setDeleteConfirm(inv.id)} className="p-1 hover:bg-red-100 rounded transition-colors" title="Delete">
+                  <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(inv.id); }} className="p-1 hover:bg-red-100 rounded transition-colors" title="Delete">
                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
                   </button>
                 )}
               </div>
-            </div>
+            </>
           );
-        })}
-        {paginatedData.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-gray-400">No invoices found.</div>
-        )}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} invoices
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button key={page} onClick={() => setCurrentPage(page)} className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${currentPage === page ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}>
-                {page}
-              </button>
-            ))}
-            <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+        }}
+      />
     </div>
   );
 }
