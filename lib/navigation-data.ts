@@ -255,6 +255,20 @@ export const navigationData: NavigationModule[] = [
     ],
   },
   {
+    id: "teaching",
+    title: "Teaching",
+    items: [
+      {
+        id: "teach-management",
+        label: "Classroom Management",
+        icon: "folder",
+        children: [
+          { id: "teach-classroom-mgmt", label: "Classroom Manager", icon: "document" },
+        ],
+      },
+    ],
+  },
+  {
     id: "students",
     title: "Students",
     items: [
@@ -275,6 +289,15 @@ export const navigationData: NavigationModule[] = [
         children: [
           { id: "enr-manual-application", label: "Manual Application Entry", icon: "document" },
           { id: "enr-transcript-generation", label: "Transcript Generation", icon: "document" },
+        ],
+      },
+      {
+        id: "acad-standing",
+        label: "Academic Standing",
+        icon: "folder",
+        children: [
+          { id: "acad-retakes", label: "Course Retakes", icon: "document" },
+          { id: "acad-probation", label: "Academic Probation", icon: "document" },
         ],
       },
     ],

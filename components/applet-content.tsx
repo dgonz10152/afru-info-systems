@@ -18,6 +18,8 @@ import { ForecastingDashboard } from "./hr/forecasting";
 import { LeaveApplications } from "./hr/leave-management";
 import { ManualApplicationEntry } from "./enrollment/manual-application";
 import { TranscriptGeneration } from "./enrollment/transcript-generation";
+import { ClassroomManagement } from "./teaching/classroom-management";
+import { CourseRetakes, AcademicProbation } from "./students/academic-standing";
 
 interface AppletContentProps {
   appletId: string | null;
@@ -176,6 +178,13 @@ export function AppletContent({ appletId, appletLabel }: AppletContentProps) {
   // Enrollment Management
   if (appletId === "enr-manual-application") return <ManualApplicationEntry />;
   if (appletId === "enr-transcript-generation") return <TranscriptGeneration />;
+
+  // Teaching
+  if (appletId === "teach-classroom-mgmt") return <ClassroomManagement />;
+
+  // Academic Standing
+  if (appletId === "acad-retakes") return <CourseRetakes />;
+  if (appletId === "acad-probation") return <AcademicProbation />;
 
   return <GenericApplet id={appletId} label={appletLabel} />;
 }
