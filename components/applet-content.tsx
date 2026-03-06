@@ -16,6 +16,8 @@ import { OnboardingContracts } from "./hr/onboarding";
 import { TrainingDashboard, TrainingRequests } from "./hr/staff-trainings";
 import { ForecastingDashboard } from "./hr/forecasting";
 import { LeaveApplications } from "./hr/leave-management";
+import { ManualApplicationEntry } from "./enrollment/manual-application";
+import { TranscriptGeneration } from "./enrollment/transcript-generation";
 
 interface AppletContentProps {
   appletId: string | null;
@@ -149,6 +151,7 @@ export function AppletContent({ appletId, appletLabel }: AppletContentProps) {
 
   // HR - Student Records
   if (appletId === "hr-student-dashboard") return <StudentDashboard />;
+  if (appletId === "student-list") return <StudentDashboard />;
 
   // HR - Staff Records
   if (appletId === "hr-staff-dashboard") return <StaffDashboard />;
@@ -169,6 +172,10 @@ export function AppletContent({ appletId, appletLabel }: AppletContentProps) {
 
   // HR - Leave Management
   if (appletId === "hr-leave-applications") return <LeaveApplications />;
+
+  // Enrollment Management
+  if (appletId === "enr-manual-application") return <ManualApplicationEntry />;
+  if (appletId === "enr-transcript-generation") return <TranscriptGeneration />;
 
   return <GenericApplet id={appletId} label={appletLabel} />;
 }

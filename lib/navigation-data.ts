@@ -268,6 +268,15 @@ export const navigationData: NavigationModule[] = [
           { id: "grades", label: "Grades", icon: "document" },
         ],
       },
+      {
+        id: "enr-management",
+        label: "Enrollment Management",
+        icon: "folder",
+        children: [
+          { id: "enr-manual-application", label: "Manual Application Entry", icon: "document" },
+          { id: "enr-transcript-generation", label: "Transcript Generation", icon: "document" },
+        ],
+      },
     ],
   },
   {
